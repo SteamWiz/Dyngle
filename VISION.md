@@ -37,7 +37,7 @@ We also have _commands_ which use Python (with a more extended set of capabiliti
 
 ### Random ideas
 
-- Use case: Sync Busy tasks with assigned GitLab issues
+- Use case: Sync Busy tasks with assigned GitHub issues
 - Idea: Separate tool for interactivity, which could use AI or not
 
 ### What it is NOT
@@ -67,15 +67,16 @@ operations:
 
 ### As we've used small Bash functions
 
-Here's a function which creates a GitLab Merge request and starts working on it, using a specific convention for the branch name.
+Here's a function which creates a GitHub pull request and starts working on it, using a specific convention for the branch name.
 
 ```bash
-mr () {
+pr () {
 	TITLE=$1
 	BRANCH=$(date +%Y%m%d)-$2
-	glab mr create --title "$TITLE" --create-source-branch --source-branch "$BRANCH" --description '' --remove-source-branch
-	git fetch
-	git checkout $BRANCH
+	git checkout -b "$BRANCH"
+	git commit --allow-empty -m "$TITLE"
+	git push -u origin "$BRANCH"
+	gh pr create --draft --title "$TITLE" --body ''
 }
 ```
 
@@ -92,10 +93,11 @@ expressions:
   dated-branch-name: >-
     formatted(datetime.now()) + '-' + branch_name
 operations:
-  mr:
-    - glab mr create --title "{{title}}" --create-source-branch --source-branch {{dated-branch-name}} --description '' --remove-source-branch
-    - git fetch
-    - git checkout {{dated-branch-name}}
+  pr:
+    - git checkout -b {{dated-branch-name}}
+    - git commit --allow-empty -m "{{title}}"
+    - git push -u origin {{dated-branch-name}}
+    - gh pr create --draft --title "{{title}}" --body ''
 ```
 
 But soon we plan to add sys.argv as a valid name in expressions!
