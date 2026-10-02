@@ -1,0 +1,22 @@
+name: Docs
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    uses: steamwiz/actions/.github/workflows/mdbook-build.yml@v1
+    with:
+      output-dir: book
+
+  deploy:
+    needs: build
+    uses: steamwiz/actions/.github/workflows/cloudflare-deploy.yml@v1
+    with:
+      cloudflare-project-name: io-steamwiz-dyngle
+      directory: .
+    secrets:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

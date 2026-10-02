@@ -1,0 +1,107 @@
+dyngle:
+  operations:
+    # Child operation that accepts nested structure
+    # Notice: no explicit type declarations needed!
+    process-user:
+      description: Process user data with nested address
+      accepts:
+        user:
+          properties:
+            name:
+            email:
+            age: { type: integer }  # non-string must be explicit
+            address:
+              properties:  # object inferred from properties
+                street:
+                city:
+                state:
+                zip:
+            preferences:
+              properties:  # object inferred from properties
+                theme: { default: light }
+                notifications: { type: boolean, default: true }
+      steps:
+        - echo "Processing user {{user.name}} <{{user.email}}>"
+        - echo "Age {{user.age}}"
+        - echo "Address {{user.address.street}}, {{user.address.city}}, {{user.address.state}} {{user.address.zip}}"
+        - echo "Theme {{user.preferences.theme}}, Notifications {{user.preferences.notifications}}"
+    
+    # Parent operation that sends nested data
+    main:
+      constants:
+        user-data:
+          user:
+            name: Alice Johnson
+            email: alice@example.com
+            age: 30
+            address:
+              street: 123 Main St
+              city: Seattle
+              state: WA
+              zip: "98101"
+            preferences:
+              theme: dark
+              notifications: false
+      steps:
+        - sub: process-user
+          send: user-data
+    
+    # Example with multiple nested levels
+    process-order:
+      description: Process order with deeply nested structure
+      accepts:
+        order:
+          properties:  # object inferred
+            order-id:
+            customer:
+              properties:  # object inferred
+                name:
+                email:
+            items:
+              items:  # array inferred from items
+                properties:  # object inferred for each item
+                  product:
+                  quantity: { type: integer }
+                  price: { type: number }
+            shipping:
+              properties:  # object inferred
+                address:
+                  properties:  # nested object inferred
+                    street:
+                    city:
+                    state:
+                method:
+      returns: result
+      steps:
+        - echo "Order ID {{order.order-id}}"
+        - echo "Customer {{order.customer.name}}"
+        - echo "Shipping to {{order.shipping.address.city}}, {{order.shipping.address.state}}"
+        - echo "Order processed" => result
+    
+    # Parent that sends complex order
+    submit-order:
+      constants:
+        order-data:
+          order:
+            order-id: "ORD-12345"
+            customer:
+              name: Bob Smith
+              email: bob@example.com
+            items:
+              - product: Widget
+                quantity: 2
+                price: 29.99
+              - product: Gadget
+                quantity: 1
+                price: 49.99
+            shipping:
+              address:
+                street: 456 Oak Ave
+                city: Portland
+                state: OR
+              method: express
+      steps:
+        - sub: process-order
+          send: order-data
+          receive: result
+        - echo "Result {{result}}"

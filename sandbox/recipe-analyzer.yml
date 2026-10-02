@@ -1,0 +1,289 @@
+# Recipe Nutrition Analyzer
+#
+# A creative demonstration of sophisticated input data handling in Dyngle.
+# This config analyzes recipes with nested objects, arrays, integers, strings, etc.
+#
+# Usage examples:
+#
+# 1. Run the main operation directly with stdin:
+#    cat recipe-data.yml | dyngle --config sandbox/recipe-analyzer.yml run analyze-nutrition
+#
+# 2. Run the parent operation that calls the sub-operation:
+#    cat recipe-data.yml | dyngle --config sandbox/recipe-analyzer.yml run generate-recipe-report
+#
+# Sample input data (save as recipe-data.yml):
+#
+# recipe_name: "Mediterranean Quinoa Bowl"
+# servings: 4
+# prep_time_minutes: 15
+# cook_time_minutes: 20
+# difficulty_level: 2
+# tags:
+#   - vegetarian
+#   - gluten-free
+#   - high-protein
+# chef:
+#   name: "Chef Maria"
+#   restaurant: "Healthy Eats Kitchen"
+#   specialty: "Mediterranean Cuisine"
+#   rating: 4.8
+# ingredients:
+#   - name: "quinoa"
+#     amount: 200
+#     unit: "grams"
+#     calories_per_unit: 120
+#     nutrition:
+#       protein: 4.4
+#       carbs: 21.3
+#       fat: 1.9
+#   - name: "cherry tomatoes"
+#     amount: 150
+#     unit: "grams"
+#     calories_per_unit: 18
+#     nutrition:
+#       protein: 0.9
+#       carbs: 3.9
+#       fat: 0.2
+#   - name: "feta cheese"
+#     amount: 100
+#     unit: "grams"
+#     calories_per_unit: 264
+#     nutrition:
+#       protein: 14.2
+#       carbs: 4.1
+#       fat: 21.3
+#   - name: "olive oil"
+#     amount: 30
+#     unit: "ml"
+#     calories_per_unit: 884
+#     nutrition:
+#       protein: 0
+#       carbs: 0
+#       fat: 100
+
+dyngle:
+  
+  expressions:
+    # Calculate total calories from all ingredients
+    total_calories: >
+      sum([
+        ing['amount'] * ing['calories_per_unit'] / 100
+        for ing in get('ingredients', [])
+      ])
+    
+    # Calculate total protein
+    total_protein: >
+      sum([
+        ing['amount'] * ing['nutrition']['protein'] / 100
+        for ing in get('ingredients', [])
+      ])
+    
+    # Calculate total carbs
+    total_carbs: >
+      sum([
+        ing['amount'] * ing['nutrition']['carbs'] / 100
+        for ing in get('ingredients', [])
+      ])
+    
+    # Calculate total fat
+    total_fat: >
+      sum([
+        ing['amount'] * ing['nutrition']['fat'] / 100
+        for ing in get('ingredients', [])
+      ])
+    
+    # Calculate per-serving values
+    calories_per_serving: >
+      round(get('total_calories') / get('servings', 1), 1)
+    
+    protein_per_serving: >
+      round(get('total_protein') / get('servings', 1), 1)
+    
+    carbs_per_serving: >
+      round(get('total_carbs') / get('servings', 1), 1)
+    
+    fat_per_serving: >
+      round(get('total_fat') / get('servings', 1), 1)
+    
+    # Calculate total time
+    total_time: >
+      get('prep_time_minutes', 0) + get('cook_time_minutes', 0)
+    
+    # Generate difficulty description
+    difficulty_desc: >
+      ['Easy', 'Medium', 'Hard', 'Expert'][get('difficulty_level', 1) - 1] if get('difficulty_level', 1) <= 4 else 'Master'
+    
+    # Format tags as comma-separated string
+    formatted_tags: >
+      ', '.join(get('tags', []))
+    
+    # Count ingredients
+    ingredient_count: >
+      len(get('ingredients', []))
+
+  operations:
+    
+    analyze-nutrition:
+      description: "Analyze nutritional content of a recipe from input data"
+      access: public
+      returns: nutrition-summary
+      
+      steps:
+        # Display recipe header
+        - echo "==================================="
+        - echo "RECIPE NUTRITIONAL ANALYSIS"
+        - echo "==================================="
+        - echo ""
+        
+        # Display basic recipe info
+        - >-
+          echo "Recipe: {{recipe_name}}"
+        - >-
+          echo "Chef: {{chef.name}} ({{chef.restaurant}})"
+        - >-
+          echo "Specialty: {{chef.specialty}}"
+        - >-
+          echo "Chef Rating: {{chef.rating}}/5.0"
+        - echo ""
+        
+        # Display recipe details
+        - >-
+          echo "Servings: {{servings}}"
+        - >-
+          echo "Prep Time: {{prep_time_minutes}} minutes"
+        - >-
+          echo "Cook Time: {{cook_time_minutes}} minutes"
+        - >-
+          echo "Total Time: {{total_time}} minutes"
+        - >-
+          echo "Difficulty: {{difficulty_desc}}"
+        - >-
+          echo "Tags: {{formatted_tags}}"
+        - >-
+          echo "Ingredients: {{ingredient_count}}"
+        - echo ""
+        
+        # Display total nutritional values
+        - echo "--- TOTAL NUTRITIONAL VALUES ---"
+        - >-
+          echo "Total Calories: {{total_calories}}"
+        - >-
+          echo "Total Protein: {{total_protein}}g"
+        - >-
+          echo "Total Carbohydrates: {{total_carbs}}g"
+        - >-
+          echo "Total Fat: {{total_fat}}g"
+        - echo ""
+        
+        # Display per-serving values
+        - echo "--- PER SERVING ({{servings}} servings) ---"
+        - >-
+          echo "Calories: {{calories_per_serving}}"
+        - >-
+          echo "Protein: {{protein_per_serving}}g"
+        - >-
+          echo "Carbs: {{carbs_per_serving}}g"
+        - >-
+          echo "Fat: {{fat_per_serving}}g"
+        - echo ""
+        
+        # Create a JSON summary for return value
+        - >-
+          echo '{"recipe": "{{recipe_name}}", "servings": {{servings}}, "calories_per_serving": {{calories_per_serving}}, "protein": {{protein_per_serving}}, "carbs": {{carbs_per_serving}}, "fat": {{fat_per_serving}}}' => nutrition-summary
+    
+    analyze-ingredients:
+      description: "Detailed analysis of individual ingredients"
+      access: private
+      
+      expressions:
+        # Get the first ingredient for demonstration
+        first_ingredient: "get('ingredients', [{}])[0].resolve('name', 'N/A')"
+        first_ingredient_calories: "get('ingredients', [{}])[0].resolve('calories_per_unit', 0)"
+      
+      steps:
+        - echo "==================================="
+        - echo "INGREDIENT BREAKDOWN"
+        - echo "==================================="
+        - echo ""
+        - >-
+          echo "First ingredient: {{first_ingredient}}"
+        - >-
+          echo "Calories per 100g: {{first_ingredient_calories}}"
+        - echo ""
+        - echo "All ingredients have been analyzed!"
+        - >-
+          echo "Ingredient data has been processed" => ingredient-analysis
+    
+    calculate-macros:
+      description: "Calculate macronutrient ratios"
+      access: private
+      
+      expressions:
+        # Calculate macronutrient percentages (calories from each macro)
+        protein_calories: "get('total_protein', 0) * 4"
+        carb_calories: "get('total_carbs', 0) * 4"
+        fat_calories: "get('total_fat', 0) * 9"
+        
+        total_macro_calories: "get('protein_calories', 0) + get('carb_calories', 0) + get('fat_calories', 0)"
+        
+        protein_percentage: "round(get('protein_calories', 0) / get('total_macro_calories', 1) * 100, 1) if get('total_macro_calories', 0) > 0 else 0"
+        carb_percentage: "round(get('carb_calories', 0) / get('total_macro_calories', 1) * 100, 1) if get('total_macro_calories', 0) > 0 else 0"
+        fat_percentage: "round(get('fat_calories', 0) / get('total_macro_calories', 1) * 100, 1) if get('total_macro_calories', 0) > 0 else 0"
+      
+      returns: macro-ratios
+      
+      steps:
+        - echo "--- MACRONUTRIENT RATIOS ---"
+        - >-
+          echo "Protein: {{protein_percentage}}%"
+        - >-
+          echo "Carbohydrates: {{carb_percentage}}%"
+        - >-
+          echo "Fat: {{fat_percentage}}%"
+        - echo ""
+        - >-
+          echo '{"protein_pct": {{protein_percentage}}, "carb_pct": {{carb_percentage}}, "fat_pct": {{fat_percentage}}}' => macro-ratios
+    
+    generate-recipe-report:
+      description: "Generate a comprehensive recipe report (calls analyze-nutrition as sub-operation)"
+      access: public
+      returns: full-report
+      
+      steps:
+        - echo "╔═════════════════════════════════════════╗"
+        - echo "║   COMPREHENSIVE RECIPE REPORT CARD      ║"
+        - echo "╚═════════════════════════════════════════╝"
+        - echo ""
+        
+        # Call the ingredient analysis sub-operation
+        - sub: analyze-ingredients
+        
+        - echo ""
+        
+        # Call the main nutrition analysis sub-operation
+        - sub: analyze-nutrition
+          receive: nutrition-data
+        
+        - echo ""
+        
+        # Call the macro calculation sub-operation
+        - sub: calculate-macros
+          receive: macro-data
+        
+        - echo ""
+        - echo "==================================="
+        - echo "SUMMARY"
+        - echo "==================================="
+        - >-
+          echo "Nutrition Data: {{nutrition-data}}"
+        - >-
+          echo "Macro Ratios: {{macro-data}}"
+        - echo ""
+        - echo "✓ Report generation complete!"
+        - echo "✓ All nutritional data calculated successfully"
+        - echo "✓ Recipe is ready for publication"
+        - echo ""
+        
+        # Create final summary
+        - >-
+          echo '{"status": "complete", "recipe": "{{recipe_name}}", "chef": "{{chef.name}}", "nutrition": {{nutrition-data}}, "macros": {{macro-data}}}' => full-report

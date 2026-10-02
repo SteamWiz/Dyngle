@@ -1,0 +1,24 @@
+dyngle:
+
+  operations:
+
+    # Won't work. we removed date.
+    today:
+      expressions:
+        today: "date.today()"
+      returns: today
+
+    # Works fine
+    now:
+      expressions:
+        now: "dtformat(datetime.now(), '{year:04d}-{month:02d}-{day:02d}')"
+      returns: now
+
+    # Works fine
+    log:
+      expressions:
+        now: "datetime.now()"
+        timestamp: "dtformat(get('now'), '{year:04d}-{month:02d}-{day:02d} {hour:02d}:{minute:02d}:{second:02d}')"
+      steps:
+        - echo "[{{timestamp}}] Event occurred"
+

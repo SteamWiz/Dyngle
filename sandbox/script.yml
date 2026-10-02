@@ -1,0 +1,13 @@
+# Look! You can include an entire script block
+
+dyngle:
+  operations:
+    test-script:
+      constants:
+        script: |
+          import sys
+          n = sys.stdin.read()
+          print(f"Hello {n}")
+      steps:
+        - python3 -c {{script}} => result
+      returns: result

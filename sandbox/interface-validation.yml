@@ -1,0 +1,85 @@
+dyngle:
+  operations:
+    greet:
+      description: Greet someone by name
+      accepts:
+        name:
+          type: string
+      steps:
+        - echo "Hello, {{name}}! Welcome to Dyngle!"
+    
+    create-user:
+      description: Create a user account with validation
+      accepts:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 20
+        email:
+          type: string
+          format: email
+        age:
+          type: integer
+          minimum: 18
+      steps:
+        - echo "Creating account for {{username}} ({{email}})"
+        - echo "User is {{age}} years old"
+    
+    process-order:
+      description: Process an order with customer and items
+      accepts:
+        customer:
+          type: object
+          properties:
+            name:
+              type: string
+            email:
+              type: string
+              format: email
+          required:
+            - name
+            - email
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              product:
+                type: string
+              quantity:
+                type: integer
+                minimum: 1
+              price:
+                type: number
+                minimum: 0
+            required:
+              - product
+              - quantity
+              - price
+          minItems: 1
+      steps:
+        - echo "Processing order for {{customer.name}}"
+        - echo "Email confirmation will be sent to {{customer.email}}"
+    
+    validate-config:
+      access: private
+      accepts:
+        host:
+          type: string
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+      steps:
+        - echo "Validated config {{host}} port {{port}}"
+    
+    deploy:
+      description: Deploy with validated configuration
+      constants:
+        server-config:
+          host: localhost
+          port: 8080
+      steps:
+        - sub: validate-config
+          send: server-config
+        - echo "Deploying to validated server..."

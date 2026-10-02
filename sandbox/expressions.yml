@@ -1,0 +1,7 @@
+dyngle:
+  expressions:
+    say-hello: >-
+        'Hello ' + name + '!'
+  operations:
+    say-hello:
+      - echo {{say-hello}}

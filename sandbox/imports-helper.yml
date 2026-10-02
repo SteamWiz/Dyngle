@@ -1,0 +1,5 @@
+dyngle:
+  operations:
+    greet-from-import:
+      steps:
+        - echo "{{greeting}} from imported file!"

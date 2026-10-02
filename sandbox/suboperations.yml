@@ -1,0 +1,126 @@
+dyngle:
+
+  constants:
+    declared-val: global
+  
+  operations:
+  
+    without-local:
+      - echo {{declared-val}}
+
+    # --- Sub-operations are ISOLATED by default ---
+    # They do NOT see parent => data unless explicitly passed via send:
+
+    isolated-child:
+      constants:
+        declared-val: child
+      steps:
+        # Uses local value
+        - echo "Child says {{declared-val}}"
+        - echo "Child executed" => result
+
+    parent-isolated:
+      # Demonstrates that child is isolated from parent live data
+      constants:
+        declared-val: parent-level
+      steps:
+        - echo "Setup" => parent-data
+        - sub: isolated-child
+        # Child cannot access parent-data - it was isolated
+        # Uses local value
+        - echo "Parent says {{declared-val}}"
+
+    # --- Explicit data passing with send: and receive: ---
+
+    child-with-returns:
+      accepts:
+        value-in: { type: string }
+      returns: value-out
+      steps:
+        - value-in -> sed s/foo/bar/ => value-out
+
+    parent-explicit:
+      constants:
+        input-data:
+          value-in: this foo that
+      steps:
+        # Send dict to child
+        - sub: child-with-return
+          send: input-data
+          receive: result
+        # Capture return value
+        - echo "Result {{result}}" => final
+      returns: final
+
+    # --- More complex example ---
+
+    process-user:
+      accepts:
+        user-id: { type: string }
+        name: { type: string }
+      returns: processed
+      expressions:
+        processed: "f'Processed: {user_id} - {name}'"
+      steps:
+        - echo "Processing {{name}}"
+
+    main-workflow:
+      constants:
+        user-data:
+          user-id: "12345"
+          name: Alice
+      steps:
+        - sub: process-user
+          send: user-data
+          receive: result
+        - echo "{{result}}"
+      returns: result
+
+    # --- Sub-operations without send: get empty context ---
+
+    standalone-op:
+      constants:
+        internal: I only see my own values
+      returns: internal
+      steps:
+        - echo "{{internal}}"
+
+    call-standalone:
+      steps:
+        - echo "Parent value" => parent-val
+        - sub: standalone-op
+          receive: result
+        # standalone-op did not see parent-val
+        - echo "Got {{result}}"
+
+    # --- Multiple sub-operations ---
+
+    step1:
+      accepts:
+        text: { type: string }
+      returns: output
+      steps:
+        - text -> sed s/foo/bar/ => output
+
+    step2:
+      accepts:
+        text: { type: string }
+      returns: output
+      steps:
+        - text -> sed s/bar/baz/ => output
+
+    pipeline:
+      constants:
+        data1: { text: foo }
+      steps:
+        - sub: step1
+          send: data1
+          receive: result1
+        # Pass result1 to next step
+        - sub: step2
+          send: data2
+          receive: result2
+      expressions:
+        data2:
+          text: get('result1')
+      returns: result2

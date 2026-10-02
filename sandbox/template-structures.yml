@@ -1,0 +1,11 @@
+dyngle:
+  expressions:
+    my-exp: "'o'*99"
+  constants:
+    hello: Hello
+  templates:
+    greeting: >-
+      {{hello}} to {{my-exp}}
+  operations:
+    silly:
+      - echo $greeting

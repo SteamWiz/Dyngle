@@ -1,0 +1,15 @@
+dyngle:
+  operations:
+    grepline:
+      constants:
+        contents: |
+          One
+          Two
+          Three
+      steps:
+        - mktemp => file-path
+        - contents -> tee {{file-path}}
+        - command: grep -xc 'Four' {{file-path}} => line-count
+          ignore-errors: true
+        - rm {{file-path}}
+      returns: line-count

@@ -1,0 +1,27 @@
+dyngle:
+  operations:
+    show-nested:
+      constants:
+        user:
+          name: Alice
+          email: alice@example.com
+          address:
+            city: Seattle
+            zip: 98101
+      steps:
+        - 'echo "Name: {{user.name}}"'
+        - 'echo "Email: {{user.email}}"'
+        - 'echo "City: {{user.address.city}}"'
+    
+    process-nested:
+      constants:
+        project:
+          name: Dyngle
+          version: 1.0.0
+          author:
+            name: Francis
+            email: francis@example.com
+      expressions:
+        summary: format('{{project.name}} v{{project.version}} by {{project.author.name}}')
+      steps:
+        - echo "{{summary}}"

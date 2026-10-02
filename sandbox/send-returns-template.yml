@@ -1,0 +1,36 @@
+dyngle:
+  operations:
+    # Example showing send: with template structure
+    deploy:
+      steps:
+        - echo "Deploying {{app}} to {{env}} at {{time}}"
+    
+    # Example showing returns: with template structure
+    get-info:
+      returns:
+        version: $ver
+        commit: $sha
+        built: $timestamp
+      steps:
+        - echo "1.0.0" => ver
+        - echo "abc123" => sha
+        - echo "2024-01-01" => timestamp
+    
+    # Main operation demonstrating both features
+    main:
+      constants:
+        app-name: MyApp
+        environment: production
+      steps:
+        # Use send: with template structure
+        - sub: deploy
+          send:
+            app: "{{app-name}}"
+            env: $environment
+            time: "2024-01-01 12:00:00"
+        
+        # Use returns: with template structure
+        - sub: get-info
+          receive: info
+        
+        - echo "Build info received"

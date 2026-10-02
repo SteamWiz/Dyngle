@@ -1,0 +1,23 @@
+dyngle:
+  operations:
+    test:
+      expressions:
+        foo-bar:
+          zing-zang: gethome()
+          ling-lang:
+            - "'One'"
+            - gethome()
+            - "'Three'"
+        got: get('foo-bar.zing-zang')
+        fmt: format('{{foo-bar.zing-zang}}')
+        func: foo_bar(data)['zing-zang']
+        direct: data['foo-bar'](data)['zing-zang']
+        listish: get('foo-bar.ling-lang')[1]
+        new: foo_bar()['zing-zang']
+      steps:
+        - echo "get says {{got}}"
+        - echo "fmt says {{fmt}}"
+        - echo "func says {{func}}"
+        - echo "direct says {{direct}}"
+        - echo "listish says {{listish}}"
+        - echo "new says {{new}}"

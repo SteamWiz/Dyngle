@@ -1,0 +1,30 @@
+dyngle:
+  operations:
+    greet:
+      - echo 'Hello {{name}}!'
+    
+    greet-with-constants:
+      constants:
+        name: Francis
+      steps:
+        - echo 'Hello {{name}}!'
+    
+    nested-properties:
+      constants:
+        user:
+          name: Alice
+          email: alice@example.com
+      steps:
+        - echo 'User {{user.name}} has email {{user.email}}'
+
+
+    # Test that we can pass complete strings with starting and ending newlines
+    # as both template replacements and inputs in command steps.
+
+    newlines:
+      expressions:
+        value: x
+        output: format('\n\nx\n\n')
+      steps:
+        - echo {{output}}
+        - output -> tee 'delete-me.txt'

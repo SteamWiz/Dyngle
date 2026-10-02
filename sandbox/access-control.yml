@@ -1,0 +1,13 @@
+dyngle:
+  operations:
+    private-helper:
+      access: private
+      steps:
+        - echo "I can only be called as a sub-operation"
+    
+    public-operation:
+      access: public
+      steps:
+        - echo "I can be run directly from CLI"
+        - sub: private-helper
+        - echo "Done!"

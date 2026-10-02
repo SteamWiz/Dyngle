@@ -1,0 +1,20 @@
+dyngle:
+  operations:
+    capture-output:
+      steps:
+        - 'echo "Hello world" => greeting'
+        - 'echo "Captured: {{greeting}}"'
+    
+    pipe-input:
+      constants:
+        message: Process this text
+      steps:
+        - 'message -> wc -w => word-count'
+        - 'echo "Word count: {{word-count}}"'
+    
+    pipeline:
+      steps:
+        - 'echo "foo bar baz" => data'
+        - 'data -> tr '' '' ''\n'' => lines'
+        - 'lines -> wc -l => line-count'
+        - 'echo "Lines: {{line-count}}"'

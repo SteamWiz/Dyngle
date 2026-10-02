@@ -1,0 +1,6 @@
+dyngle:
+  constants:
+    greeting: Hello
+  
+  imports:
+    - imports-helper.yml

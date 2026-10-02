@@ -1,0 +1,5 @@
+[book]
+authors = ["Francis Potter"]
+language = "en"
+src = "docs"
+title = "Dyngle"

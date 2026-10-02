@@ -1,0 +1,57 @@
+dyngle:
+  constants:
+    app-name: Dyngle Demo
+  
+  operations:
+    # Basic prompt - just wait for user to press enter
+    wait-for-enter:
+      steps:
+        - echo 'About to perform an important operation...'
+        - prompt: 'Press enter to continue'
+        - echo 'Continuing with the operation!'
+    
+    # Capture user input
+    greet-user:
+      steps:
+        - prompt: 'What is your name? '
+          receive: user-name
+        - echo 'Hello, {{user-name}}! Welcome to {{app-name}}.'
+    
+    # Multiple prompts with template support
+    setup-project:
+      steps:
+        - prompt: 'Enter project name: '
+          receive: project-name
+        - prompt: 'Enter author name: '
+          receive: author
+        - prompt: 'Enter version (default 1.0.0): '
+          receive: version
+        - echo 'Creating project {{project-name}}'
+        - 'echo "Author: {{author}}"'
+        - 'echo "Version: {{version}}"'
+    
+    # Interactive confirmation
+    confirm-deploy:
+      constants:
+        message: |
+          =========================================
+          WARNING - About to deploy to production!
+          =========================================
+      steps:
+        - echo {{message}}
+        - prompt: 'Type ''yes'' to confirm: '
+          receive: confirmation
+        - echo 'User entered {{confirmation}}'
+    
+    # Prompts with data from stdin
+    review-and-confirm:
+      constants:
+        environment: production
+        region: east
+      steps:
+        - 'echo "Configuration received:"'
+        - echo 'Environment is {{environment}}'
+        - echo 'Region is {{region}}'
+        - prompt: 'Does this look correct? (yes/no): '
+          receive: answer
+        - echo 'User answered {{answer}}'

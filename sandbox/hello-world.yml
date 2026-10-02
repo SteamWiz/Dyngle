@@ -1,0 +1,44 @@
+dyngle:
+
+  operations:
+
+    hello:
+      steps:
+        - echo "Hello world" => result
+      returns: result
+
+    hello-arg-in-expression:
+      expressions:
+        name: get('runtime.args.0') or "nobody"
+      steps:
+        - echo "Hello {{name}}" => result
+      returns: result
+
+    hello-arg-direct:
+      steps:
+        - echo "Hello {{runtime.args.0}}" => result
+      returns: result
+
+    hello-data:
+      accepts:
+        name:
+      steps:
+        - echo "Hello {{name}}" => result
+      returns: result
+
+    hello-arg-sub:
+      accepts:
+        name:
+      steps:
+        - echo "Hello {{name}}" => result
+      returns: result
+
+    hello-arg-via-sub:
+      expressions:
+        payload:
+          name: get('runtime.args.0')
+      steps:
+        - sub: hello-arg-sub
+          send: payload
+          receive: result
+      returns: result

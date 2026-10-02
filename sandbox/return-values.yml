@@ -1,0 +1,19 @@
+dyngle:
+  operations:
+    get-date:
+      returns: today
+      steps:
+        - date => today
+    
+    use-return:
+      steps:
+        - sub: get-date
+          receive: current-date
+        - echo "The date is {{current-date}}"
+    
+    process-and-return:
+      returns: result
+      expressions:
+        result: from_json(get('raw'))
+      steps:
+        - echo '{"status":"success","value":42}' => raw
