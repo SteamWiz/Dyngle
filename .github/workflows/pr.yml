@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   python:
-    uses: steamwiz/actions/.github/workflows/python-ci.yml@ci/split-pipeline
+    uses: steamwiz/actions/.github/workflows/python-ci.yml@v1
     with:
       python-version: '3.13'
       source-dir: dyngle
@@ -23,6 +23,6 @@ jobs:
 
   # Catch a broken book before merge; deployment happens from docs.yml on main.
   docs:
-    uses: steamwiz/actions/.github/workflows/mdbook-build.yml@ci/split-pipeline
+    uses: steamwiz/actions/.github/workflows/mdbook-build.yml@v1
     with:
       output-dir: book
