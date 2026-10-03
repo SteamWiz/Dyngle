@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  pull_request:
+
+# Read-only: pull requests never need to write to the repository.
+permissions:
+  contents: read
+  checks: write
+
+# One run per PR; a new push cancels the superseded run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    uses: steamwiz/actions/.github/workflows/python-ci.yml@ci/split-pipeline
+    with:
+      python-version: '3.13'
+      source-dir: dyngle
+      coverage-min: 98
+
+  # Catch a broken book before merge; deployment happens from docs.yml on main.
+  docs:
+    uses: steamwiz/actions/.github/workflows/mdbook-build.yml@ci/split-pipeline
+    with:
+      output-dir: book
