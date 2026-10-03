@@ -5,6 +5,11 @@ on:
     branches:
       - main
 
+# Deploys must not overlap; let an in-flight deploy finish.
+concurrency:
+  group: docs-deploy
+  cancel-in-progress: false
+
 jobs:
   build:
     uses: steamwiz/actions/.github/workflows/mdbook-build.yml@v1
