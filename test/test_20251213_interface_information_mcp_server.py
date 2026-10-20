@@ -1,11 +1,10 @@
 import asyncio
 import json
 from wizlib.config_handler import ConfigHandler
-from mcp.types import ListToolsRequest, CallToolRequest
 
 from dyngle import DyngleApp
 from dyngle.command.mcp_command import McpCommand
-from test import DyngleTestCase
+from test import DyngleTestCase, mcp_call_tool, mcp_list_tools
 
 
 class TestInterfaceInformationMcpServer(DyngleTestCase):
@@ -33,12 +32,11 @@ class TestInterfaceInformationMcpServer(DyngleTestCase):
         server = cmd.create_server()
 
         async def run_test():
-            handler = server.request_handlers[ListToolsRequest]
-            result = await handler(ListToolsRequest())
-            tool = next(t for t in result.root.tools if t.name == "greet")
+            result = await mcp_list_tools(server)
+            tool = next(t for t in result.tools if t.name == "greet")
             
             # Tool should have input schema with interface fields
-            props = tool.inputSchema.get("properties", {})
+            props = tool.input_schema.get("properties", {})
             self.assertIn("name", props)
             self.assertIn("age", props)
             self.assertEqual(props["name"]["type"], "string")
@@ -46,7 +44,7 @@ class TestInterfaceInformationMcpServer(DyngleTestCase):
             
             # String fields get blank defaults so are optional
             # Non-string fields without defaults are required
-            required = tool.inputSchema.get("required", [])
+            required = tool.input_schema.get("required", [])
             self.assertNotIn("name", required)  # String - has blank default
             self.assertIn("age", required)  # Integer - no default
 
@@ -72,16 +70,15 @@ class TestInterfaceInformationMcpServer(DyngleTestCase):
         server = cmd.create_server()
 
         async def run_test():
-            handler = server.request_handlers[ListToolsRequest]
-            result = await handler(ListToolsRequest())
-            tool = next(t for t in result.root.tools if t.name == "process")
+            result = await mcp_list_tools(server)
+            tool = next(t for t in result.tools if t.name == "process")
             
             # Tool should have no parameters
-            props = tool.inputSchema.get("properties", {})
+            props = tool.input_schema.get("properties", {})
             self.assertEqual(len(props), 0)
             
             # No required parameters
-            required = tool.inputSchema.get("required", [])
+            required = tool.input_schema.get("required", [])
             self.assertEqual(len(required), 0)
 
         with self.patcherr():
@@ -110,15 +107,10 @@ class TestInterfaceInformationMcpServer(DyngleTestCase):
         server = cmd.create_server()
 
         async def run_test():
-            handler = server.request_handlers[CallToolRequest]
-            result = await handler(
-                CallToolRequest(
-                    params={"name": "greet", "arguments": {"name": "Alice"}}
-                )
-            )
+            result = await mcp_call_tool(server, "greet", {"name": "Alice"})
             
             # Should return success with result
-            content = result.root.content[0]
+            content = result.content[0]
             data = json.loads(content.text)
             self.assertIn("result", data)
             self.assertEqual(data["result"], "Hello Alice")
@@ -146,18 +138,10 @@ class TestInterfaceInformationMcpServer(DyngleTestCase):
         server = cmd.create_server()
 
         async def run_test():
-            handler = server.request_handlers[CallToolRequest]
-            result = await handler(
-                CallToolRequest(
-                    params={
-                        "name": "process",
-                        "arguments": {},
-                    }
-                )
-            )
+            result = await mcp_call_tool(server, "process", {})
             
             # Should return success with result
-            content = result.root.content[0]
+            content = result.content[0]
             data = json.loads(content.text)
             self.assertIn("result", data)
             self.assertEqual(data["result"], "Done")
@@ -196,20 +180,12 @@ class TestInterfaceInformationMcpServer(DyngleTestCase):
         server = cmd.create_server()
 
         async def run_test():
-            handler = server.request_handlers[CallToolRequest]
-            result = await handler(
-                CallToolRequest(
-                    params={
-                        "name": "info",
-                        "arguments": {
-                            "user": {"name": "Bob", "age": 30}
-                        },
-                    }
-                )
+            result = await mcp_call_tool(
+                server, "info", {"user": {"name": "Bob", "age": 30}}
             )
             
             # Should return success
-            content = result.root.content[0]
+            content = result.content[0]
             data = json.loads(content.text)
             self.assertIn("result", data)
             self.assertEqual(data["result"], "Bob is 30")
@@ -242,12 +218,11 @@ class TestInterfaceInformationMcpServer(DyngleTestCase):
         server = cmd.create_server()
 
         async def run_test():
-            handler = server.request_handlers[ListToolsRequest]
-            result = await handler(ListToolsRequest())
-            tool = next(t for t in result.root.tools if t.name == "search")
+            result = await mcp_list_tools(server)
+            tool = next(t for t in result.tools if t.name == "search")
             
             # Tool should have no parameters
-            props = tool.inputSchema.get("properties", {})
+            props = tool.input_schema.get("properties", {})
             self.assertEqual(len(props), 0)
             self.assertNotIn("query", props)
             self.assertNotIn("limit", props)
@@ -283,27 +258,18 @@ class TestInterfaceInformationMcpServer(DyngleTestCase):
 
         async def run_test():
             # Check tool definition
-            list_handler = server.request_handlers[ListToolsRequest]
-            list_result = await list_handler(ListToolsRequest())
-            tool = next(t for t in list_result.root.tools 
+            list_result = await mcp_list_tools(server)
+            tool = next(t for t in list_result.tools 
                        if t.name == "process")
             
-            props = tool.inputSchema.get("properties", {})
+            props = tool.input_schema.get("properties", {})
             self.assertIn("items", props)
             self.assertEqual(props["items"]["type"], "array")
             
             # Test calling with array
-            call_handler = server.request_handlers[CallToolRequest]
-            call_result = await call_handler(
-                CallToolRequest(
-                    params={
-                        "name": "process",
-                        "arguments": {"items": ["a", "b", "c"]},
-                    }
-                )
-            )
+            call_result = await mcp_call_tool(server, "process", {"items": ["a", "b", "c"]})
             
-            content = call_result.root.content[0]
+            content = call_result.content[0]
             data = json.loads(content.text)
             self.assertIn("result", data)
 

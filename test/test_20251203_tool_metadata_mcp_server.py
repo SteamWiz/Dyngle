@@ -2,11 +2,10 @@
 
 import asyncio
 from wizlib.config_handler import ConfigHandler
-from mcp.types import ListToolsRequest
 
 from dyngle import DyngleApp
 from dyngle.command.mcp_command import McpCommand
-from test import DyngleTestCase
+from test import DyngleTestCase, mcp_call_tool, mcp_list_tools
 
 
 class TestToolMetadataMcpServer(DyngleTestCase):
@@ -32,9 +31,8 @@ class TestToolMetadataMcpServer(DyngleTestCase):
 
         async def run_test():
             # Call list_tools handler
-            handler = server.request_handlers[ListToolsRequest]
-            result = await handler(ListToolsRequest())
-            search_tool = next(t for t in result.root.tools if t.name == "search")
+            result = await mcp_list_tools(server)
+            search_tool = next(t for t in result.tools if t.name == "search")
             
             # Tool should have the description
             self.assertEqual("Performs a Google query", search_tool.description)
@@ -61,9 +59,8 @@ class TestToolMetadataMcpServer(DyngleTestCase):
         server = cmd.create_server()
 
         async def run_test():
-            handler = server.request_handlers[ListToolsRequest]
-            result = await handler(ListToolsRequest())
-            tool = next(t for t in result.root.tools if t.name == "no_desc")
+            result = await mcp_list_tools(server)
+            tool = next(t for t in result.tools if t.name == "no_desc")
             
             # Tool should exist with generated description
             self.assertIsNotNone(tool)
@@ -92,12 +89,11 @@ class TestToolMetadataMcpServer(DyngleTestCase):
         server = cmd.create_server()
 
         async def run_test():
-            handler = server.request_handlers[ListToolsRequest]
-            result = await handler(ListToolsRequest())
-            tool = next(t for t in result.root.tools if t.name == "get_data")
+            result = await mcp_list_tools(server)
+            tool = next(t for t in result.tools if t.name == "get_data")
             
             # Tool should have input schema
-            self.assertIsNotNone(tool.inputSchema)
+            self.assertIsNotNone(tool.input_schema)
 
         with self.patcherr():
             asyncio.run(run_test())
@@ -127,13 +123,12 @@ class TestToolMetadataMcpServer(DyngleTestCase):
         server = cmd.create_server()
 
         async def run_test():
-            handler = server.request_handlers[ListToolsRequest]
-            result = await handler(ListToolsRequest())
-            tool = next(t for t in result.root.tools if t.name == "search")
+            result = await mcp_list_tools(server)
+            tool = next(t for t in result.tools if t.name == "search")
             
             # Tool should have input schema
-            self.assertIsNotNone(tool.inputSchema)
-            props = tool.inputSchema.get("properties", {})
+            self.assertIsNotNone(tool.input_schema)
+            props = tool.input_schema.get("properties", {})
             
             # Should have no parameters (no interface defined)
             self.assertEqual(len(props), 0)
@@ -165,11 +160,10 @@ class TestToolMetadataMcpServer(DyngleTestCase):
         server = cmd.create_server()
 
         async def run_test():
-            handler = server.request_handlers[ListToolsRequest]
-            result = await handler(ListToolsRequest())
-            tool = next(t for t in result.root.tools if t.name == "process")
+            result = await mcp_list_tools(server)
+            tool = next(t for t in result.tools if t.name == "process")
             
-            props = tool.inputSchema.get("properties", {})
+            props = tool.input_schema.get("properties", {})
             
             # Should have no parameters (no interface)
             self.assertEqual(len(props), 0)
@@ -201,15 +195,14 @@ class TestToolMetadataMcpServer(DyngleTestCase):
         server = cmd.create_server()
 
         async def run_test():
-            handler = server.request_handlers[ListToolsRequest]
-            result = await handler(ListToolsRequest())
-            tool = next(t for t in result.root.tools if t.name == "search")
+            result = await mcp_list_tools(server)
+            tool = next(t for t in result.tools if t.name == "search")
             
             # Should have description
             self.assertEqual("Performs a Google query", tool.description)
             
             # Should have no parameters (no interface)
-            props = tool.inputSchema.get("properties", {})
+            props = tool.input_schema.get("properties", {})
             self.assertEqual(len(props), 0)
 
         with self.patcherr():
@@ -218,7 +211,6 @@ class TestToolMetadataMcpServer(DyngleTestCase):
     def test_call_tool_with_parameters(self):
         """Test calling a tool without interface (no parameters)"""
         import json
-        from mcp.types import CallToolRequest
         
         a = DyngleApp()
         a.config = ConfigHandler.setup(
@@ -238,20 +230,11 @@ class TestToolMetadataMcpServer(DyngleTestCase):
         server = cmd.create_server()
 
         async def run_test():
-            from mcp.types import CallToolRequest
-            handler = server.request_handlers[CallToolRequest]
-            result = await handler(
-                CallToolRequest(
-                    params={
-                        "name": "echo",
-                        "arguments": {},
-                    }
-                )
-            )
+            result = await mcp_call_tool(server, "echo", {})
             
             # Should return TextContent with result
-            self.assertEqual(len(result.root.content), 1)
-            content = result.root.content[0]
+            self.assertEqual(len(result.content), 1)
+            content = result.content[0]
             self.assertEqual(content.type, "text")
             
             # Parse the JSON result

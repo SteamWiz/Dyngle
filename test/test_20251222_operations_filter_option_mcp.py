@@ -3,12 +3,11 @@ import json
 import tempfile
 from pathlib import Path
 from wizlib.config_handler import ConfigHandler
-from mcp.types import ListToolsRequest, CallToolRequest
 
 from dyngle import DyngleApp
 from dyngle.command.mcp_command import McpCommand
 from dyngle.error import DyngleError
-from test import DyngleTestCase
+from test import DyngleTestCase, mcp_call_tool, mcp_list_tools
 
 
 class TestOperationsFilterOptionMcp(DyngleTestCase):
@@ -45,9 +44,8 @@ dyngle:
             server = cmd.create_server()
 
             async def run_test():
-                handler = server.request_handlers[ListToolsRequest]
-                result = await handler(ListToolsRequest())
-                tools = result.root.tools
+                result = await mcp_list_tools(server)
+                tools = result.tools
                 
                 # Should only have op2
                 self.assertEqual(len(tools), 1)
@@ -85,9 +83,8 @@ dyngle:
             server = cmd.create_server()
 
             async def run_test():
-                handler = server.request_handlers[ListToolsRequest]
-                result = await handler(ListToolsRequest())
-                tools = result.root.tools
+                result = await mcp_list_tools(server)
+                tools = result.tools
                 tool_names = [t.name for t in tools]
                 
                 # Should only have alpha and gamma
@@ -185,9 +182,8 @@ dyngle:
             server = cmd.create_server()
 
             async def run_test():
-                handler = server.request_handlers[ListToolsRequest]
-                result = await handler(ListToolsRequest())
-                tools = result.root.tools
+                result = await mcp_list_tools(server)
+                tools = result.tools
                 tool_names = [t.name for t in tools]
                 
                 # Should have all three operations
@@ -228,14 +224,9 @@ dyngle:
             server = cmd.create_server()
 
             async def run_test():
-                handler = server.request_handlers[CallToolRequest]
-                result = await handler(
-                    CallToolRequest(
-                        params={"name": "op1", "arguments": {}}
-                    )
-                )
+                result = await mcp_call_tool(server, "op1", {})
                 
-                content = result.root.content[0]
+                content = result.content[0]
                 data = json.loads(content.text)
                 self.assertIn("result", data)
                 self.assertEqual(data["result"], "op1-result")
@@ -270,9 +261,8 @@ dyngle:
             server = cmd.create_server()
 
             async def run_test():
-                handler = server.request_handlers[ListToolsRequest]
-                result = await handler(ListToolsRequest())
-                tools = result.root.tools
+                result = await mcp_list_tools(server)
+                tools = result.tools
                 tool_names = [t.name for t in tools]
                 
                 # Should only have public-op
@@ -308,9 +298,8 @@ dyngle:
             server = cmd.create_server()
 
             async def run_test():
-                handler = server.request_handlers[ListToolsRequest]
-                result = await handler(ListToolsRequest())
-                tools = result.root.tools
+                result = await mcp_list_tools(server)
+                tools = result.tools
                 tool_names = [t.name for t in tools]
                 
                 # Should have both operations
@@ -346,9 +335,8 @@ dyngle:
             server = cmd.create_server()
 
             async def run_test():
-                handler = server.request_handlers[ListToolsRequest]
-                result = await handler(ListToolsRequest())
-                tools = result.root.tools
+                result = await mcp_list_tools(server)
+                tools = result.tools
                 
                 # Should have all operations
                 self.assertEqual(len(tools), 2)

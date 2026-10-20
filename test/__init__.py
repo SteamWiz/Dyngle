@@ -4,12 +4,26 @@ from tempfile import NamedTemporaryFile
 from unittest.mock import Mock, patch
 import subprocess
 
+from mcp.client import Client
 from wizlib.test_case import WizLibTestCase
 
 from dyngle import DyngleApp
 from dyngle.model.operation import run_subprocess
 
 DyngleApp.initialize()
+
+
+async def mcp_list_tools(server):
+    """List tools on an MCP server through the in-memory test client"""
+    async with Client(server) as client:
+        return await client.list_tools()
+
+
+async def mcp_call_tool(server, name, arguments=None):
+    """Call a tool on an MCP server through the in-memory test client"""
+    async with Client(server) as client:
+        return await client.call_tool(name, arguments or {})
+
 
 class TestableSubprocessRunner:
     """For testing - a patch for run_subprocess that always captures outputs

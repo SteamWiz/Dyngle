@@ -1,8 +1,15 @@
 """MCP server operations for exposing Dyngle operations as tools"""
 
 import json
-from mcp.server import Server
-from mcp.types import Tool, TextContent
+from mcp.server import Server, ServerRequestContext
+from mcp.types import (
+    CallToolRequestParams,
+    CallToolResult,
+    ListToolsResult,
+    PaginatedRequestParams,
+    TextContent,
+    Tool,
+)
 
 from dyngle.model.context import Context
 from dyngle.model.operation import OperationAccess
@@ -20,11 +27,11 @@ def create_mcp_server(operations: dict, operations_filter: set = None, args: lis
     Returns:
         Configured MCP Server instance
     """
-    server = Server("dyngle")
     session_args = args or []
-    
-    @server.list_tools()
-    async def list_tools() -> list[Tool]:
+
+    async def list_tools(
+        ctx: ServerRequestContext, params: PaginatedRequestParams | None
+    ) -> ListToolsResult:
         """List all public operations as MCP tools"""
         tools = []
         
@@ -59,15 +66,29 @@ def create_mcp_server(operations: dict, operations_filter: set = None, args: lis
             tool = Tool(
                 name=op_name,
                 description=operation.description or f"Execute {op_name} operation",
-                inputSchema=input_schema,
+                input_schema=input_schema,
             )
             tools.append(tool)
-        
-        return tools
 
-    @server.call_tool()
-    async def call_tool(name: str, arguments: dict) -> list[TextContent]:
-        """Execute a Dyngle operation"""
+        return ListToolsResult(tools=tools)
+
+    async def call_tool(
+        ctx: ServerRequestContext, params: CallToolRequestParams
+    ) -> CallToolResult:
+        """Execute a Dyngle operation, reporting errors as tool results"""
+        try:
+            text = run_operation(params.name, params.arguments or {})
+        except Exception as error:
+            # mcp v2 no longer converts handler exceptions into isError
+            # results; do it here so the calling model still sees the error.
+            return CallToolResult(
+                content=[TextContent(type="text", text=str(error))],
+                is_error=True,
+            )
+        return CallToolResult(content=[TextContent(type="text", text=text)])
+
+    def run_operation(name: str, arguments: dict) -> str:
+        """Run the named operation and return its JSON-encoded result"""
         operation = operations.get(name)
         if not operation:  # pragma: nocover
             raise DyngleError(f"Unknown operation: {name}")
@@ -89,11 +110,13 @@ def create_mcp_server(operations: dict, operations_filter: set = None, args: lis
         # Block stdout for MCP operations - results should come via return value
         return_value = operation.run(context, show_stdout=False)
         # Use default parameter to handle non-serializable types like Path objects
-        result = json.dumps({"result": return_value}, default=str)
-        
-        return [TextContent(type="text", text=result)]
+        return json.dumps({"result": return_value}, default=str)
 
-    return server
+    return Server(
+        name="dyngle",
+        on_list_tools=list_tools,
+        on_call_tool=call_tool,
+    )
 
 
 def parse_operations_filter(operations_filter_str: str, operations: dict) -> set:
