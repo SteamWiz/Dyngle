@@ -3,7 +3,7 @@ from tempfile import NamedTemporaryFile
 from yaml import safe_dump
 from dyngle import DyngleApp
 from dyngle.error import DyngleError
-from test import DyngleTestCase
+from test import DyngleTestCase, mcp_list_tools
 
 
 class TestAccessAttributeForOperations(DyngleTestCase):
@@ -134,7 +134,6 @@ class TestAccessAttributeForOperations(DyngleTestCase):
     def test_mcp_server_exposes_only_public_operations(self):
         """MCP server exposes only public operations as tools"""
         import asyncio
-        from mcp.types import ListToolsRequest
         from wizlib.config_handler import ConfigHandler
         from dyngle import DyngleApp
         from dyngle.command.mcp_command import McpCommand
@@ -158,9 +157,8 @@ class TestAccessAttributeForOperations(DyngleTestCase):
         server = cmd.create_server()
         
         async def run_test():
-            handler = server.request_handlers[ListToolsRequest]
-            result = await handler(ListToolsRequest())
-            tool_names = [t.name for t in result.root.tools]
+            result = await mcp_list_tools(server)
+            tool_names = [t.name for t in result.tools]
             self.assertIn("public_op", tool_names)
             self.assertNotIn("private_op", tool_names)
         

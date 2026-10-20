@@ -3,7 +3,7 @@ from wizlib.config_handler import ConfigHandler
 from dyngle import DyngleApp
 from dyngle.error import DyngleError
 from dyngle.model.context import Context
-from test import DyngleTestCase
+from test import DyngleTestCase, mcp_list_tools
 
 
 class TestExplicitOnlySubOperationsClearerNaming(DyngleTestCase):
@@ -291,7 +291,6 @@ class TestExplicitOnlySubOperationsClearerNaming(DyngleTestCase):
     def test_mcp_server_uses_accept_schema(self):
         """Test that MCP server uses accept: for tool input schema"""
         from dyngle.command.mcp_command import McpCommand
-        from mcp.types import ListToolsRequest
         import asyncio
         
         a = DyngleApp()
@@ -310,11 +309,10 @@ class TestExplicitOnlySubOperationsClearerNaming(DyngleTestCase):
         server = cmd.create_server()
         
         async def run_test():
-            handler = server.request_handlers[ListToolsRequest]
-            result = await handler(ListToolsRequest())
-            t = next((x for x in result.root.tools if x.name == "test_op"), None)
+            result = await mcp_list_tools(server)
+            t = next((x for x in result.tools if x.name == "test_op"), None)
             self.assertIsNotNone(t)
-            self.assertIn("param", t.inputSchema["properties"])
+            self.assertIn("param", t.input_schema["properties"])
         
         with self.patcherr():
             asyncio.run(run_test())
